@@ -20,7 +20,8 @@ public class ClientTest {
         client.setToken("123");
         client.connect();
         client.setAutoHeart(true);
-        sendMsg("2", client);
+        client.setAutoReconnect(true);
+        sendMsg("2", client, false);
         extracted();
         Thread.currentThread().join();
     }
@@ -41,16 +42,16 @@ public class ClientTest {
         client.setToken("123");
         client.setAutoHeart(true);
         client.connect();
-        sendMsg("1", client);
+        sendMsg("1", client, false);
         Thread.currentThread().join();
     }
 
     private void createClient(String id, String toId) throws InterruptedException {
         NettyClient nettyClient = createClient(id);
-        sendMsg(toId, nettyClient);
+        sendMsg(toId, nettyClient, false);
     }
 
-    private void sendMsg(String toId, NettyClient nettyClient) throws InterruptedException {
+    private void sendMsg(String toId, NettyClient nettyClient, boolean enableCache) throws InterruptedException {
         new Thread(() -> {
             Scanner sc = new Scanner(System.in);
             while (sc.hasNext()) {
@@ -69,6 +70,9 @@ public class ClientTest {
                         bodyStr = String.join(" ", body);
                     }
                     Message message = new Message(header, bodyStr == null ? null : bodyStr.getBytes(StandardCharsets.UTF_8));
+                    if (enableCache) {
+                        header.setEnableCache(true);
+                    }
                     nettyClient.sendMsg(message);
                 } catch (NumberFormatException e) {
                     e.printStackTrace();

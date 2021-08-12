@@ -26,8 +26,8 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
     protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
         Message.Header header = msg.getHeader();
         if (header.getMsgType() == MsgType.SEND) {
-            System.err.println(msg + " --> " + new String(msg.getBody()));
             sendAck(msg);
+            System.err.println(msg + " --> " + new String(msg.getBody()));
         } else if (header.getMsgType() == MsgType.ACK) {
             if (header.getStatus() == MsgStatus.SERVER_ACK.getValue()) {
                 if (log.isDebugEnabled()) {
@@ -39,14 +39,18 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
                     log.debug("消息[{}]客户端已收到", msg.getOriginId());
                 }
                 client.onDelivered(msg);
+            } else if (header.getStatus() == MsgStatus.FAIL.getValue()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("消息[{}]服务端已收到,但接受端离线，本次发送失败", msg.getOriginId());
+                }
             }
         } else if (header.getMsgType() == MsgType.HEART) {
             // TODO: 2021/8/10 记录
         } else {
-            client.onResponse(msg);
             if (msg.getBody() != null) {
-                log.info("response : [{}]",new String(msg.getBody()));
+                log.info("response : [{}]", new String(msg.getBody()));
             }
+            client.onResponse(msg);
         }
     }
 

@@ -5,8 +5,6 @@ import com.wish.im.server.netty.client.ClientInfo;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
-import static com.wish.im.common.message.MsgType.HEART;
-
 /**
  * 描述
  *
@@ -55,9 +53,6 @@ public interface IOfflineMessageContainer {
         //转发给接受端
         ChannelFuture channelFuture = to.getChannel().writeAndFlush(msg);
         channelFuture.addListener((ChannelFutureListener) future -> {
-            if (msg.getHeader().getMsgType() == HEART) {
-                return;
-            }
             if (!future.isSuccess() && msg.getHeader().isEnableCache()) {
                 putOffLienMsg(msg);
             } else {

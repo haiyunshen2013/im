@@ -2,12 +2,12 @@ package com.wish.im.server.netty.config;
 
 
 import com.baomidou.mybatisplus.annotation.DbType;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wish.im.server.mvc.offlinemessage.service.OfflineMessageService;
 import com.wish.im.server.netty.message.DbOfflineMessageContainer;
-import com.wish.im.server.netty.message.DefaultOfflineMessageContainer;
 import com.wish.im.server.netty.message.IOfflineMessageContainer;
 import com.wish.ipusher.api.handler.AutoFillHandler;
 import com.wish.ipusher.api.utils.JsonUtils;
@@ -47,7 +47,9 @@ public class NettyServerConfig {
 
     @Bean
     public ObjectMapper objectMapper() {
-        return JsonUtils.getMapper();
+        ObjectMapper mapper = JsonUtils.getMapper();
+        JacksonTypeHandler.setObjectMapper(mapper);
+        return mapper;
     }
 
     @Bean
