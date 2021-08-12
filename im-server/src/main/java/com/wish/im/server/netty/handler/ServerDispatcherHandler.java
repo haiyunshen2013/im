@@ -36,12 +36,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.wish.im.common.message.MsgType.RESPONSE;
 import static com.wish.im.server.netty.handler.ServerHandler.CLIENT_ATTR;
 
 /**
@@ -82,9 +80,9 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
                 IpusherContextHolder.setContext(ipusherContext);
                 invoke = invokeMethHandler(msg, reqMessage, resolvedBean);
                 body = JsonUtils.serializeAsBytes(invoke);
-            } catch (IllegalAccessException | InvocationTargetException e){
+            } catch (IllegalAccessException | InvocationTargetException e) {
                 header.setStatus(MsgStatus.INTERNAL_SERVER_ERROR.getValue());
-            }finally {
+            } finally {
                 IpusherContextHolder.release();
             }
         } else {
@@ -92,6 +90,7 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
             header.setStatus(MsgStatus.NOT_FOUND.getValue());
         }
         Message message = new Message(header, body);
+        message.setOriginId(msg.getId());
         ctx.channel().writeAndFlush(message);
     }
 
