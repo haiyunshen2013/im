@@ -3,9 +3,9 @@ package com.wish.im.server.netty.handler;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.wish.im.common.message.Message;
 import com.wish.im.common.message.MsgStatus;
+import com.wish.im.server.constant.AccountType;
 import com.wish.im.server.mvc.account.entity.Account;
 import com.wish.im.server.mvc.account.service.AccountService;
-import com.wish.im.server.constant.AccountType;
 import com.wish.im.server.netty.client.ClientContainer;
 import com.wish.im.server.netty.client.ClientInfo;
 import com.wish.im.server.netty.message.IOfflineMessageContainer;
@@ -51,7 +51,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         if (header.getMsgType() == SHAKEHANDS) {
             boolean loginSuccess = processLogin(ctx, msg);
             if (loginSuccess) {
-                doShakeHands(msg);
+                doShakeHands(ctx, msg);
             } else {
                 Message.Header noLoginHeader = createHeader(fromId, SEND, MsgStatus.NOT_LOGIN.getValue());
                 Message noLongin = new Message(noLoginHeader, "登录失败".getBytes(StandardCharsets.UTF_8));
@@ -63,9 +63,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         } else {
             if (validLogin(msg)) {
                 if (header.getMsgType() == HEART) {
-                    doHeart(msg);
+                    doHeart(ctx, msg);
                 } else if (header.getMsgType() == SEND) {
-                    doSend(msg);
+                    doSend(ctx, msg);
                     return;
                 } else if (header.getMsgType() == ACK) {
                     doAck(msg);
@@ -165,15 +165,27 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
      *
      * @param msg msg
      */
-    private void doSend(Message msg) {
+    private void doSend(ChannelHandlerContext ctx, Message msg) {
         String fromId = msg.getHeader().getFromId();
         log.debug("接收到{}的消息，id = {}", fromId, msg.getId());
         Message.Header header = createHeader(fromId, ACK, 1);
         Message ack = new Message(header, null);
         ack.setOriginId(msg.getId());
+        ack.getHeader().setStatus(MsgStatus.SERVER_ACK.getValue());
+        //如果接受端在线
+        ClientInfo to = ClientContainer.getById(msg.getHeader().getToId());
+        if (to != null) {
+            transferMsg(msg, to);
+        } else {
+            // 对方不在线，要么缓存消息，等待下次发送，要么告诉发送端本次发送失败
+            if (msg.getHeader().isEnableCache()) {
+                putOffLienMsg(msg);
+            } else {
+                ack.getHeader().setStatus(MsgStatus.FAIL.getValue());
+            }
+        }
         log.debug("服务端发送ACK给发送端");
-        doTransferMsg(ack, ClientContainer.getById(fromId));
-        transferMsg(msg);
+        ctx.channel().writeAndFlush(ack);
     }
 
     /**
@@ -184,16 +196,12 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
     private void doAck(Message msg) {
         // 客户端收到消息后发送确认回执
         log.debug("接受端[{}]已确认", msg.getHeader().getFromId());
-        transferMsg(msg);
-    }
-
-    private void transferMsg(Message msg) {
         //如果接受端在线
         ClientInfo to = ClientContainer.getById(msg.getHeader().getToId());
         if (to != null) {
             //转发给接受端
-            doTransferMsg(msg, to);
-        } else if (msg.getHeader().isEnableCache()){
+            transferMsg(msg, to);
+        } else {
             //如果对方离线，缓存起来，等用户上线立马发送
             putOffLienMsg(msg);
         }
@@ -204,31 +212,37 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
      *
      * @param msg 客户端心跳
      */
-    private void doHeart(Message msg) {
+    private void doHeart(ChannelHandlerContext ctx, Message msg) {
         log.trace("接收到{}的 心跳 消息，id = {}", msg.getHeader().getFromId(), msg.getId());
         // 回写心跳
         Message.Header header = createHeader(msg.getHeader().getFromId(), HEART, 1);
         Message heart = new Message(header, null);
         heart.setOriginId(msg.getId());
-        doTransferMsg(heart, ClientContainer.getById(msg.getHeader().getFromId()));
+        ctx.writeAndFlush(msg);
     }
 
     /**
-     * 回应握手消息
+     * 回应握手消息,发送离线时缓存的消息
      * 处理登录验证逻辑
      *
      * @param msg 客户端发送的消息
      */
-    private void doShakeHands(Message msg) {
+    private void doShakeHands(ChannelHandlerContext ctx, Message msg) {
         String fromId = msg.getHeader().getFromId();
         log.debug("接收到{}的 握手 消息，id = {}", fromId, msg.getId());
-        ClientInfo clientInfo = ClientContainer.getById(fromId);
-
         Message.Header header = createHeader(msg.getHeader().getFromId(), SHAKEHANDS, 0);
         // 回应握手消息
-        doTransferMsg(new Message(header, null), clientInfo);
+        ctx.channel().writeAndFlush(new Message(header, null));
         // 发送离线消息
-        sendOfflineMsg(clientInfo);
+        Set<Message> offlineMsgs = offlineMessageContainer.getOfflineMsgByToId(fromId);
+        offlineMsgs.forEach(offlineMsg -> {
+            ChannelFuture channelFuture = ctx.writeAndFlush(offlineMsg);
+            channelFuture.addListener(future -> {
+                if (future.isSuccess()) {
+                    offlineMessageContainer.removeOfflineMsg(offlineMsg);
+                }
+            });
+        });
     }
 
     /**
@@ -237,7 +251,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
      * @param msg 原始消息
      * @param to  客户端
      */
-    private void doTransferMsg(Message msg, ClientInfo to) {
+    private void transferMsg(Message msg, ClientInfo to) {
         offlineMessageContainer.transferMsg(msg, to);
     }
 
@@ -307,30 +321,11 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
     }
 
     /**
-     * 发送离线后的消息
-     *
-     * @param clientInfo clientInfo
-     */
-    private void sendOfflineMsg(ClientInfo clientInfo) {
-        Set<Message> offlineMsgs = offlineMessageContainer.getOfflineMsgByToId(clientInfo.getId());
-        offlineMsgs.forEach(message -> doTransferMsg(message, clientInfo));
-    }
-
-    /**
      * 缓存离线消息
      *
      * @param pack 消息
      */
     private void putOffLienMsg(Message pack) {
         offlineMessageContainer.putOffLienMsg(pack);
-    }
-
-    private void removeOfflineMsg(Message pack) {
-        offlineMessageContainer.removeOfflineMsg(pack);
-    }
-
-    public ServerHandler setOfflineMessageContainer(IOfflineMessageContainer offlineMessageContainer) {
-        this.offlineMessageContainer = offlineMessageContainer;
-        return this;
     }
 }

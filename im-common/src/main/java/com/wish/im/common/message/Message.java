@@ -68,7 +68,7 @@ public class Message {
          */
         private String toId;
 
-        private long timestamp;
+        private long timestamp = System.currentTimeMillis();
         /**
          * 消息状态
          * 0:尚未发送
