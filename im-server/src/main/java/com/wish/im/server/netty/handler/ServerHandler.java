@@ -82,6 +82,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         noPermission.setMsgType(RESPONSE);
                         noPermission.setStatus(MsgStatus.FORBIDDEN.getValue());
                         Message noPermissionMsg = new Message(noPermission, "登录失效".getBytes(StandardCharsets.UTF_8));
+                        noPermissionMsg.setOriginId(msg.getId());
                         ctx.channel().writeAndFlush(noPermissionMsg);
                         return;
                     }
