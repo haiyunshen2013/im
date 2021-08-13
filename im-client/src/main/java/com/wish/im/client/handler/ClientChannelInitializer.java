@@ -45,6 +45,9 @@ public class ClientChannelInitializer extends ChannelInitializer<SocketChannel> 
         pipeline.addLast(new IdleStateHandler(60, 20, 60 * 10, TimeUnit.SECONDS));
         pipeline.addLast(new HeartbeatHandler(client));
         pipeline.addLast(new ClientHandler(client));
+        RequestExecuteHandler requestExecuteHandler = new RequestExecuteHandler();
+        requestExecuteHandler.init();
+        pipeline.addLast(requestExecuteHandler);
 //        pipeline.addLast(new LoggingHandler(LogLevel.DEBUG));
     }
 }
