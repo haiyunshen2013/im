@@ -1,9 +1,9 @@
 package com.wish.im.client;
 
+import com.wish.im.client.concurrent.ListenableFuture;
 import com.wish.im.common.message.Message;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
-import org.springframework.util.concurrent.ListenableFuture;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;

@@ -31,11 +31,17 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
             ctx.fireChannelRead(msg);
         }
         if (header.getMsgType() == MsgType.SEND) {
+            // 普通消息
+            // 1.发送回执
             sendAck(msg);
+            // 2.回调
+            client.onMessageReceive(msg);
             System.err.println(msg + " --> " + new String(msg.getBody()));
         } else if (header.getMsgType() == MsgType.HEART || header.getMsgType() == MsgType.SHAKEHANDS) {
             // ignore HEART
         } else if (header.getMsgType() == MsgType.ACK) {
+            // 2.回调
+            client.onMessageReceive(msg);
             // 消息确认
             if (header.getStatus() == MsgStatus.SERVER_ACK.getValue()) {
                 if (log.isDebugEnabled()) {
@@ -51,6 +57,8 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
                 }
             }
         } else {
+            // 2.回调
+            client.onMessageReceive(msg);
             if (msg.getBody() != null) {
                 log.info("response : [{}]", new String(msg.getBody()));
             }

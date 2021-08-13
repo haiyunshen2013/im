@@ -1,8 +1,11 @@
 package com.wish.im.client;
 
+import com.wish.im.client.concurrent.ListenableFuture;
+import com.wish.im.client.concurrent.SettableListenableFuture;
 import com.wish.im.client.constants.ClientStatus;
 import com.wish.im.client.handler.ClientChannelInitializer;
 import com.wish.im.client.handler.RequestExecuteHandler;
+import com.wish.im.client.message.Callback;
 import com.wish.im.client.message.ResponseMessage;
 import com.wish.im.common.message.Message;
 import com.wish.im.common.message.MsgType;
@@ -15,8 +18,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.SettableListenableFuture;
 
 import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
@@ -33,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Data
 public class NettyClient implements Closeable {
-    private final static String REQUEST_HANDLER_NAME = "REQUEST_HANDLER";
     /**
      * 客户端id，全局唯一
      */
@@ -65,6 +65,7 @@ public class NettyClient implements Closeable {
 
     private boolean autoReconnect;
 
+    private Callback<Message> callback;
     /**
      * 掉线以后保存的离线消息
      */
@@ -179,6 +180,8 @@ public class NettyClient implements Closeable {
     }
 
     public void onMessageReceive(Message message) {
-
+        if (callback != null) {
+            callback.onMessageReceive(message);
+        }
     }
 }
