@@ -2,6 +2,8 @@ package com.wish.im.client;
 
 import com.wish.im.client.constants.ClientStatus;
 import com.wish.im.client.handler.ClientChannelInitializer;
+import com.wish.im.client.handler.RequestExecuteHandler;
+import com.wish.im.client.message.ResponseMessage;
 import com.wish.im.common.message.Message;
 import com.wish.im.common.message.MsgType;
 import io.netty.bootstrap.Bootstrap;
@@ -13,17 +15,14 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.SettableListenableFuture;
 
 import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-
-import static com.wish.im.common.message.MsgType.*;
 
 /**
  * netty连接客户端
@@ -34,6 +33,7 @@ import static com.wish.im.common.message.MsgType.*;
 @Slf4j
 @Data
 public class NettyClient implements Closeable {
+    private final static String REQUEST_HANDLER_NAME = "REQUEST_HANDLER";
     /**
      * 客户端id，全局唯一
      */
@@ -50,11 +50,6 @@ public class NettyClient implements Closeable {
     private NioEventLoopGroup eventExecutors;
 
     private Channel channel;
-
-    /**
-     * 是否缓存离线消息
-     */
-    private boolean isCacheMsgIfOffline;
 
     /**
      * 客户端状态 0：初始化，1：准备中，2：连接成功，3：连接失败
@@ -81,11 +76,6 @@ public class NettyClient implements Closeable {
         this.port = port;
     }
 
-    public NettyClient setCacheMsgIfOffline(boolean cacheMsgIfOffline) {
-        isCacheMsgIfOffline = cacheMsgIfOffline;
-        return this;
-    }
-
     /**
      * 初始化连接参数
      */
@@ -105,7 +95,7 @@ public class NettyClient implements Closeable {
      */
     public void connect() {
         status = ClientStatus.CONNECTING;
-        while (status != ClientStatus.CONNECTED ) {
+        while (status != ClientStatus.CONNECTED) {
             doConnect();
             if (!autoReconnect) {
                 return;
@@ -150,43 +140,18 @@ public class NettyClient implements Closeable {
         }
     }
 
-    private void sendOffLineMsg() {
-        offLineMsg.forEach(this::doSendMsg);
-    }
-
-    public void sendMsg(Message message) {
+    public ListenableFuture<Message> sendMsg(Message message) {
         message.getHeader().setFromId(clientId);
-        if (status != ClientStatus.CONNECTED && isCacheMsgIfOffline) {
-            putOfflineMsg(message);
-        } else {
-            if (message.getHeader().getMsgType() == HEART) {
-                sendOffLineMsg();
-            }
-            doSendMsg(message);
-        }
-    }
-
-    private void doSendMsg(Message message) {
+        SettableListenableFuture<Message> responseFuture = new SettableListenableFuture<>();
         ChannelFuture channelFuture = channel.writeAndFlush(message);
+        RequestExecuteHandler requestExecuteHandler = channel.pipeline().get(RequestExecuteHandler.class);
+        requestExecuteHandler.addFuture(message.getId(), new ResponseMessage(message, responseFuture));
         channelFuture.addListener((ChannelFutureListener) future -> {
-            if (!future.isSuccess()) {
-                if (isCacheMsgIfOffline) {
-                    putOfflineMsg(message);
-                }
-            } else {
-                if (message.getHeader().getMsgType() == ACK) {
-                    log.trace("消息[{}]已发送ACK", message.getId());
-                } else if (message.getHeader().getMsgType() != HEART  && message.getHeader().getMsgType() != SHAKEHANDS) {
-                    log.debug("消息[{}]已发送", message.getId());
-                }
+            if (!future.isSuccess() && !future.isDone()) {
+                responseFuture.setException(future.cause());
             }
         });
-    }
-
-    private void putOfflineMsg(Message message) {
-        if (message.getHeader().getMsgType() != HEART) {
-            offLineMsg.add(message);
-        }
+        return responseFuture;
     }
 
     /**
@@ -202,21 +167,7 @@ public class NettyClient implements Closeable {
         }
     }
 
-    public void onDelivering(Message message) {
-        Optional<Message> optional = offLineMsg.stream()
-                .filter(msg -> StringUtils.equals(msg.getId(), message.getId())).findAny();
-        optional.ifPresent(offLineMsg::remove);
-    }
-
-    public void onDelivered(Message message) {
-
-    }
-
-    public void onResponse(Message message) {
-
-    }
-    public NettyClient setToken(String token) {
+    public void setToken(String token) {
         this.token = token;
-        return this;
     }
 }

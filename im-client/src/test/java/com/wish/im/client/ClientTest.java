@@ -3,9 +3,11 @@ package com.wish.im.client;
 import com.wish.im.common.message.Message;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
+import org.springframework.util.concurrent.ListenableFuture;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 描述
@@ -21,7 +23,7 @@ public class ClientTest {
         client.connect();
         client.setAutoHeart(true);
         client.setAutoReconnect(true);
-        sendMsg("2", client, false);
+        sendMsg("2", client, true);
         extracted();
         Thread.currentThread().join();
     }
@@ -73,8 +75,10 @@ public class ClientTest {
                     if (enableCache) {
                         header.setEnableCache(true);
                     }
-                    nettyClient.sendMsg(message);
-                } catch (NumberFormatException e) {
+                    ListenableFuture<Message> listenableFuture = nettyClient.sendMsg(message);
+                    TimeUnit.SECONDS.sleep(1);
+                    System.err.println(listenableFuture);
+                } catch (NumberFormatException | InterruptedException e) {
                     e.printStackTrace();
                 }
             }

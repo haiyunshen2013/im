@@ -55,6 +55,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
             } else {
                 Message.Header noLoginHeader = createHeader(fromId, SEND, MsgStatus.NOT_LOGIN.getValue());
                 Message noLongin = new Message(noLoginHeader, "登录失败".getBytes(StandardCharsets.UTF_8));
+                noLongin.setOriginId(msg.getId());
                 Channel channel = ctx.channel();
                 channel.writeAndFlush(noLongin);
                 channel.disconnect();
@@ -219,7 +220,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         Message.Header header = createHeader(msg.getHeader().getFromId(), HEART, 1);
         Message heart = new Message(header, null);
         heart.setOriginId(msg.getId());
-        ctx.writeAndFlush(msg);
+        ctx.writeAndFlush(heart);
     }
 
     /**
@@ -233,7 +234,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         log.debug("接收到{}的 握手 消息，id = {}", fromId, msg.getId());
         Message.Header header = createHeader(msg.getHeader().getFromId(), SHAKEHANDS, 0);
         // 回应握手消息
-        ctx.channel().writeAndFlush(new Message(header, null));
+        Message shakeHands = new Message(header, null);
+        shakeHands.setOriginId(msg.getId());
+        ctx.channel().writeAndFlush(shakeHands);
         // 发送离线消息
         Set<Message> offlineMsgs = offlineMessageContainer.getOfflineMsgByToId(fromId);
         offlineMsgs.forEach(offlineMsg -> {

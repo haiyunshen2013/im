@@ -7,6 +7,7 @@ import com.wish.im.common.message.MsgType;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * 描述
@@ -28,29 +29,31 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
         if (header.getMsgType() == MsgType.SEND) {
             sendAck(msg);
             System.err.println(msg + " --> " + new String(msg.getBody()));
+        } else if (header.getMsgType() == MsgType.HEART || header.getMsgType() == MsgType.SHAKEHANDS) {
+            // ignore HEART
         } else if (header.getMsgType() == MsgType.ACK) {
+            // 消息确认
             if (header.getStatus() == MsgStatus.SERVER_ACK.getValue()) {
                 if (log.isDebugEnabled()) {
                     log.debug("消息[{}]服务端已收到", msg.getOriginId());
                 }
-                client.onDelivering(msg);
             } else if (header.getStatus() == MsgStatus.RECEIVER_ACK.getValue()) {
                 if (log.isDebugEnabled()) {
                     log.debug("消息[{}]客户端已收到", msg.getOriginId());
                 }
-                client.onDelivered(msg);
             } else if (header.getStatus() == MsgStatus.FAIL.getValue()) {
                 if (log.isDebugEnabled()) {
                     log.debug("消息[{}]服务端已收到,但接受端离线，本次发送失败", msg.getOriginId());
                 }
             }
-        } else if (header.getMsgType() == MsgType.HEART) {
-            // TODO: 2021/8/10 记录
         } else {
             if (msg.getBody() != null) {
                 log.info("response : [{}]", new String(msg.getBody()));
             }
-            client.onResponse(msg);
+        }
+        // 处理响应消息，心跳响应，发送消息响应，请求响应，握手响应
+        if (StringUtils.isNotBlank(msg.getOriginId())) {
+            ctx.fireChannelRead(msg);
         }
     }
 
