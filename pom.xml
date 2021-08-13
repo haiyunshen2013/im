@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <packaging>pom</packaging>
+    <parent>
+        <artifactId>ipusher</artifactId>
+        <groupId>com.wish</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modules>
+        <module>im-server</module>
+        <module>im-client</module>
+        <module>im-common</module>
+    </modules>
+    <artifactId>im</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>im</name>
+    <description>im</description>
+    <properties>
+        <java.version>1.8</java.version>
+    </properties>
+    <distributionManagement>
+        <repository>
+            <id>Releases</id>
+            <name>Releases</name>
+            <url>http://172.16.8.8:8081/nexus/content/repositories/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>Snapshots</id>
+            <name>Snapshots</name>
+            <url>http://172.16.8.8:8081/nexus/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+</project>
