@@ -2,12 +2,8 @@ package com.wish.im.server.netty.message;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.wish.im.common.message.Message;
-import com.wish.im.common.message.MsgStatus;
-import com.wish.im.common.message.MsgType;
 import com.wish.im.server.mvc.offlinemessage.entity.OfflineMessage;
 import com.wish.im.server.mvc.offlinemessage.service.OfflineMessageService;
-import com.wish.im.server.netty.client.ClientContainer;
-import com.wish.im.server.netty.client.ClientInfo;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -68,22 +64,6 @@ public class DbOfflineMessageContainer implements IOfflineMessageContainer {
     public void clean() {
         QueryWrapper<OfflineMessage> queryWrapper = new QueryWrapper<>();
         queryWrapper.lambda().lt(OfflineMessage::getCreateTime, LocalDateTime.now().minusDays(1));
-        List<OfflineMessage> list = offlineMessageService.list(queryWrapper);
-        for (OfflineMessage offlineMessage : list) {
-            Message offlineMsg = offlineMessage.getMessage();
-            Message.Header header = new Message.Header();
-            header.setFromId("server");
-            String fromId = offlineMsg.getHeader().getFromId();
-            header.setToId(fromId);
-            header.setMsgType(MsgType.SEND);
-            header.setStatus(MsgStatus.FAIL.getValue());
-            Message message = new Message(header, offlineMsg.getBody());
-            message.setOriginId(offlineMsg.getId());
-            ClientInfo clientInfo = ClientContainer.getById(fromId);
-            if (clientInfo != null) {
-                transferMsg(message, clientInfo);
-            }
-        }
         offlineMessageService.remove(queryWrapper);
     }
 }

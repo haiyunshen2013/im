@@ -256,7 +256,15 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
      * @param to  客户端
      */
     private void transferMsg(Message msg, ClientInfo to) {
-        offlineMessageContainer.transferMsg(msg, to);
+        //转发给接受端
+        ChannelFuture channelFuture = to.getChannel().writeAndFlush(msg);
+        channelFuture.addListener((ChannelFutureListener) future -> {
+            if (!future.isSuccess() && msg.getHeader().isEnableCache()) {
+                putOffLienMsg(msg);
+            } else {
+                offlineMessageContainer.removeOfflineMsg(msg);
+            }
+        });
     }
 
     @NotNull
