@@ -2,8 +2,6 @@ package com.wish.im.server.netty.message;
 
 import com.wish.im.common.message.Message;
 import com.wish.im.server.netty.client.ClientInfo;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 
 /**
  * 描述
@@ -50,19 +48,14 @@ public interface IOfflineMessageContainer {
      * @param to  客户端
      */
     default void transferMsg(Message msg, ClientInfo to) {
-        //转发给接受端
-        ChannelFuture channelFuture = to.getChannel().writeAndFlush(msg);
-        channelFuture.addListener((ChannelFutureListener) future -> {
-            if (!future.isSuccess() && msg.getHeader().isEnableCache()) {
-                putOffLienMsg(msg);
-            } else {
-                removeOfflineMsg(msg);
-            }
-        });
+
     }
 
     /**
      * 清除失效消息
      */
-    void clean();
+    default void clean() {
+    }
+
+    ;
 }

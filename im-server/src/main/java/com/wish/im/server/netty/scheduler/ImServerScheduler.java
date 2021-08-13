@@ -2,7 +2,6 @@ package com.wish.im.server.netty.scheduler;
 
 import com.wish.im.server.netty.message.IOfflineMessageContainer;
 import lombok.AllArgsConstructor;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,7 +15,7 @@ import org.springframework.stereotype.Component;
 public class ImServerScheduler {
     private final IOfflineMessageContainer offlineMessageContainer;
 
-    @Scheduled(cron = "0 0/1 * * * ?")
+//    @Scheduled(cron = "0 0/1 * * * ?")
     public void cleanRubbishMsg() {
         offlineMessageContainer.clean();
     }
