@@ -26,6 +26,10 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
         Message.Header header = msg.getHeader();
+        // 处理响应消息，心跳响应，发送消息响应，请求响应，握手响应
+        if (StringUtils.isNotBlank(msg.getOriginId())) {
+            ctx.fireChannelRead(msg);
+        }
         if (header.getMsgType() == MsgType.SEND) {
             sendAck(msg);
             System.err.println(msg + " --> " + new String(msg.getBody()));
@@ -50,10 +54,6 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
             if (msg.getBody() != null) {
                 log.info("response : [{}]", new String(msg.getBody()));
             }
-        }
-        // 处理响应消息，心跳响应，发送消息响应，请求响应，握手响应
-        if (StringUtils.isNotBlank(msg.getOriginId())) {
-            ctx.fireChannelRead(msg);
         }
     }
 

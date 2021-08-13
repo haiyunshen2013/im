@@ -24,7 +24,7 @@ import java.util.concurrent.TimeoutException;
 public class RequestExecuteHandler extends SimpleChannelInboundHandler<Message> {
     private final Map<String, ResponseMessage> listeners = new ConcurrentHashMap<>();
 
-    private long expireTime = 10 * 60 * 1000L;
+    private long expireTime = 30 * 60 * 1000L;
 
     private long expireRate = 10 * 1000L;
 
@@ -88,6 +88,10 @@ public class RequestExecuteHandler extends SimpleChannelInboundHandler<Message> 
             log.debug("message {} has expired ", next.getValue().getOriginMessage());
             return delete;
         });
+    }
+
+    public Map<String, ResponseMessage> getListeners() {
+        return listeners;
     }
 
     public void setExpireTime(long expireTime) {
