@@ -147,8 +147,15 @@ public class NettyClient implements Closeable {
         RequestExecuteHandler requestExecuteHandler = channel.pipeline().get(RequestExecuteHandler.class);
         requestExecuteHandler.addFuture(message.getId(), new ResponseMessage(message, responseFuture));
         channelFuture.addListener((ChannelFutureListener) future -> {
-            if (!future.isSuccess() && !future.isDone()) {
-                responseFuture.setException(future.cause());
+            if (!responseFuture.isDone()) {
+                if (!future.isSuccess()) {
+                    responseFuture.setException(future.cause());
+                    requestExecuteHandler.getListeners().remove(message.getId());
+                } else if (message.getHeader().getMsgType() == MsgType.ACK) {
+                    // ack消息没有回执，发送成功及完成
+                    responseFuture.set(null);
+                    requestExecuteHandler.getListeners().remove(message.getId());
+                }
             }
         });
         return responseFuture;
@@ -169,5 +176,9 @@ public class NettyClient implements Closeable {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public void onMessageReceive(Message message) {
+
     }
 }
