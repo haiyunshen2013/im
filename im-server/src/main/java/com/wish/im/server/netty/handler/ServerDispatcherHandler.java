@@ -80,7 +80,7 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
                 IpusherContextHolder.setContext(ipusherContext);
                 invoke = invokeMethHandler(msg, reqMessage, resolvedBean);
                 body = JsonUtils.serializeAsBytes(invoke);
-            } catch (IllegalAccessException | InvocationTargetException e) {
+            } catch (Exception e) {
                 header.setStatus(MsgStatus.INTERNAL_SERVER_ERROR.getValue());
             } finally {
                 IpusherContextHolder.release();

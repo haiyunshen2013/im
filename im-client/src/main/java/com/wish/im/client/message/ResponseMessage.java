@@ -1,8 +1,8 @@
 package com.wish.im.client.message;
 
+import com.wish.im.client.concurrent.SettableListenableFuture;
 import com.wish.im.common.message.Message;
 import lombok.Data;
-import org.springframework.util.concurrent.SettableListenableFuture;
 
 /**
  * 描述
