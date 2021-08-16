@@ -4,7 +4,7 @@ package com.wish.im.common.message;
  * 消息类型
  *
  * @author shy
- * @date 2021/7/22
+ * @since 2021/7/22
  */
 public class MsgType {
     /**
