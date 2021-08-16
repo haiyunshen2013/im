@@ -1,6 +1,6 @@
 package com.wish.im.client.handler;
 
-import com.wish.im.client.NettyClient;
+import com.wish.im.client.ImClient;
 import com.wish.im.common.message.Message;
 import com.wish.im.common.message.MsgStatus;
 import com.wish.im.common.message.MsgType;
@@ -17,9 +17,9 @@ import org.apache.commons.lang3.StringUtils;
  */
 @Slf4j
 public class ClientHandler extends SimpleChannelInboundHandler<Message> {
-    private final NettyClient client;
+    private final ImClient client;
 
-    public ClientHandler(NettyClient client) {
+    public ClientHandler(ImClient client) {
         this.client = client;
     }
 

@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 public class ClientTest {
     @Test
     public void f1() throws InterruptedException {
-        NettyClient client = createClient("1");
+        ImClient client = createClient("1");
         client.setToken("123");
         client.connect();
         client.setAutoHeart(true);
@@ -40,7 +40,7 @@ public class ClientTest {
 
     @Test
     public void f2() throws InterruptedException {
-        NettyClient client = createClient("2");
+        ImClient client = createClient("2");
         client.setToken("123");
         client.setAutoHeart(true);
         client.connect();
@@ -49,11 +49,11 @@ public class ClientTest {
     }
 
     private void createClient(String id, String toId) throws InterruptedException {
-        NettyClient nettyClient = createClient(id);
+        ImClient nettyClient = createClient(id);
         sendMsg(toId, nettyClient, false);
     }
 
-    private void sendMsg(String toId, NettyClient nettyClient, boolean enableCache) throws InterruptedException {
+    private void sendMsg(String toId, ImClient nettyClient, boolean enableCache) throws InterruptedException {
         new Thread(() -> {
             Scanner sc = new Scanner(System.in);
             while (sc.hasNext()) {
@@ -86,7 +86,7 @@ public class ClientTest {
     }
 
     @NotNull
-    private static NettyClient createClient(String id) {
-        return new NettyClient(id, "localhost", 8080);
+    private static ImClient createClient(String id) {
+        return new ImClient(id, "localhost", 8080);
     }
 }

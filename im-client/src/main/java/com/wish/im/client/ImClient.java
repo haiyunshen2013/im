@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Data
-public class NettyClient implements Closeable {
+public class ImClient implements Closeable {
     /**
      * 客户端id，全局唯一
      */
@@ -71,7 +71,7 @@ public class NettyClient implements Closeable {
      */
     private final Set<Message> offLineMsg = new LinkedHashSet<>();
 
-    public NettyClient(String clientId, String host, int port) {
+    public ImClient(String clientId, String host, int port) {
         this.clientId = clientId;
         this.host = host;
         this.port = port;
@@ -181,7 +181,11 @@ public class NettyClient implements Closeable {
 
     public void onMessageReceive(Message message) {
         if (callback != null) {
-            callback.onMessageReceive(message);
+            try {
+                callback.onMessageReceive(message);
+            } catch (Exception e) {
+                log.error("onMessageReceive error", e);
+            }
         }
     }
 }

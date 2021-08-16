@@ -1,6 +1,6 @@
 package com.wish.im.client.handler;
 
-import com.wish.im.client.NettyClient;
+import com.wish.im.client.ImClient;
 import com.wish.im.common.codec.JsonDecoder;
 import com.wish.im.common.codec.JsonEncoder;
 import io.netty.channel.ChannelInitializer;
@@ -23,9 +23,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClientChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-    private final NettyClient client;
+    private final ImClient client;
 
-    public ClientChannelInitializer(NettyClient client) {
+    public ClientChannelInitializer(ImClient client) {
         this.client = client;
     }
 
