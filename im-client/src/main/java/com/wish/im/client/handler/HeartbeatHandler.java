@@ -1,6 +1,6 @@
 package com.wish.im.client.handler;
 
-import com.wish.im.client.NettyClient;
+import com.wish.im.client.ImClient;
 import com.wish.im.common.message.Message;
 import com.wish.im.common.message.MsgType;
 import io.netty.channel.ChannelHandlerContext;
@@ -22,14 +22,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
 
-    private final NettyClient client;
+    private final ImClient client;
 
     /**
      * 记录心跳回应丢失，当丢失大于3时，主动断线重连
      */
     private final AtomicInteger ac = new AtomicInteger();
 
-    public HeartbeatHandler(NettyClient client) {
+    public HeartbeatHandler(ImClient client) {
         this.client = client;
     }
 
