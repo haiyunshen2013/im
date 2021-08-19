@@ -21,8 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -61,15 +59,11 @@ public class ImClient implements Closeable {
      */
     private volatile boolean isReconnecting;
 
-    private boolean autoHeart;
+    private boolean autoHeart = true;
 
     private boolean autoReconnect;
 
     private Callback<Message> callback;
-    /**
-     * 掉线以后保存的离线消息
-     */
-    private final Set<Message> offLineMsg = new LinkedHashSet<>();
 
     public ImClient(String clientId, String host, int port) {
         this.clientId = clientId;
@@ -134,7 +128,17 @@ public class ImClient implements Closeable {
      * 断线重连
      */
     public void reconnect() {
-        if (!isReconnecting && autoReconnect) {
+        if (!autoReconnect) {
+            return;
+        }
+        if (channel == null) {
+            connect();
+            return;
+        }
+        if (channel.isActive()) {
+            return;
+        }
+        if (!isReconnecting) {
             isReconnecting = true;
             channel.disconnect();
             connect();
