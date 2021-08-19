@@ -31,7 +31,7 @@ public class JsonDecoder extends MessageToMessageDecoder<ByteBuf> {
             array = ByteBufUtil.getBytes(in, in.readerIndex(), length, false);
             offset = 0;
         }
-        byte[] dest = new byte[length - offset];
+        byte[] dest = new byte[length];
         System.arraycopy(array, offset, dest, 0, length);
         out.add(JsonUtils.deserialize(dest, Message.class));
     }
