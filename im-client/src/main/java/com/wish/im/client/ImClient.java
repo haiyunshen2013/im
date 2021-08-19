@@ -131,17 +131,17 @@ public class ImClient implements Closeable {
         if (!autoReconnect) {
             return;
         }
-        if (channel == null) {
-            connect();
-            return;
-        }
-        if (channel.isActive()) {
-            return;
-        }
+        // 双重校验判定是否重连
         if (!isReconnecting) {
-            isReconnecting = true;
-            channel.disconnect();
-            connect();
+            synchronized (this) {
+                if (!isReconnecting) {
+                    isReconnecting = true;
+                    if (channel != null) {
+                        channel.disconnect();
+                    }
+                    connect();
+                }
+            }
         }
     }
 
