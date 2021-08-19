@@ -2,7 +2,6 @@ package com.wish.im.server.netty.handler;
 
 import com.wish.im.common.codec.JsonDecoder;
 import com.wish.im.common.codec.JsonEncoder;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -35,10 +34,10 @@ public class ServerChannelInitializer extends ChannelInitializer<SocketChannel> 
 
     @Override
     protected void initChannel(SocketChannel socketChannel) throws Exception {
+        ChannelPipeline pipeline = socketChannel.pipeline();
+        //获取管道
         SelfSignedCertificate ssc = new SelfSignedCertificate();
         SslContext sslCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey()).build();
-        //获取管道
-        ChannelPipeline pipeline = socketChannel.pipeline();
         pipeline.addLast(sslCtx.newHandler(socketChannel.alloc()));
 
         pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
