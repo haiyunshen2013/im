@@ -110,7 +110,6 @@ public class ImClient implements Closeable {
             ChannelFuture channelFuture = bootstrap.connect(host, port).sync();
             channel = channelFuture.channel();
             status = ClientStatus.CONNECTED;
-            isReconnecting = false;
             Message.Header header = new Message.Header();
             header.setMsgType(MsgType.SHAKEHANDS);
             byte[] body = token != null ? token.getBytes(StandardCharsets.UTF_8) : null;
@@ -140,6 +139,7 @@ public class ImClient implements Closeable {
                         channel.disconnect();
                     }
                     connect();
+                    isReconnecting = false;
                 }
             }
         }
