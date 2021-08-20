@@ -16,7 +16,6 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.Closeable;
@@ -30,7 +29,6 @@ import java.util.concurrent.TimeUnit;
  * @since 2021/7/26
  */
 @Slf4j
-@Data
 public class ImClient implements Closeable {
     /**
      * 客户端id，全局唯一
@@ -191,5 +189,68 @@ public class ImClient implements Closeable {
                 log.error("onMessageReceive error", e);
             }
         }
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public Bootstrap getBootstrap() {
+        return bootstrap;
+    }
+
+    public NioEventLoopGroup getEventExecutors() {
+        return eventExecutors;
+    }
+
+    public Channel getChannel() {
+        return channel;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public boolean isReconnecting() {
+        return isReconnecting;
+    }
+
+    public boolean isAutoHeart() {
+        return autoHeart;
+    }
+
+    public boolean isAutoReconnect() {
+        return autoReconnect;
+    }
+
+    public Callback<Message> getCallback() {
+        return callback;
+    }
+
+    public ImClient setAutoHeart(boolean autoHeart) {
+        this.autoHeart = autoHeart;
+        return this;
+    }
+
+    public ImClient setAutoReconnect(boolean autoReconnect) {
+        this.autoReconnect = autoReconnect;
+        return this;
+    }
+
+    public ImClient setCallback(Callback<Message> callback) {
+        this.callback = callback;
+        return this;
     }
 }
