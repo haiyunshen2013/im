@@ -94,7 +94,10 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
             }
         }
         // 刷新心跳时间
-        ClientContainer.getById(fromId).setLastBeat(System.currentTimeMillis());
+        ClientInfo clientInfo = ClientContainer.getById(fromId);
+        if (clientInfo != null) {
+            clientInfo.setLastBeat(System.currentTimeMillis());
+        }
     }
 
     private void processInvalidLogin(ChannelHandlerContext ctx, Message msg) {
