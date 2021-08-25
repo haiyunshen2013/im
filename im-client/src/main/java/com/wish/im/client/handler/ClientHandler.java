@@ -80,6 +80,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
     private void sendAck(Message msg) {
         Message.Header header = msg.getHeader();
         Message.Header ackHeader = new Message.Header();
+        ackHeader.setEnableCache(true);
         ackHeader.setStatus(MsgStatus.RECEIVER_ACK.getValue());
         ackHeader.setToId(header.getFromId());
         ackHeader.setMsgType(MsgType.ACK);

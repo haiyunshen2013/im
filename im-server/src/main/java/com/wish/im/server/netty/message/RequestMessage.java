@@ -13,7 +13,7 @@ import java.net.URI;
  * @since 2021/8/11
  */
 @Data
-public class ReqMessage {
+public class RequestMessage {
     private Message message;
 
     private Message.Header header;

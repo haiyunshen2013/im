@@ -252,8 +252,7 @@ public class ImClient implements Closeable {
         this.autoReconnect = autoReconnect;
     }
 
-    public ImClient setCallback(Callback<Message> callback) {
+    public void setCallback(Callback<Message> callback) {
         this.callback = callback;
-        return this;
     }
 }
