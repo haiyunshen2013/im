@@ -124,8 +124,8 @@ public class ImClient implements Closeable {
     /**
      * 断线重连
      */
-    public void reconnect() {
-        if (!autoReconnect) {
+    public void reconnect(Channel channel) {
+        if (!autoReconnect || channel != this.channel) {
             return;
         }
         // 双重校验判定是否重连
@@ -133,9 +133,6 @@ public class ImClient implements Closeable {
             synchronized (this) {
                 if (!isReconnecting) {
                     isReconnecting = true;
-                    if (channel != null) {
-                        channel.disconnect();
-                    }
                     connect();
                     isReconnecting = false;
                 }

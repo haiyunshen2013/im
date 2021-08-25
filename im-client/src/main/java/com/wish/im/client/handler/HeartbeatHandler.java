@@ -52,7 +52,7 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
                 case READER_IDLE:
                     // 规定时间内没收到服务端心跳包响应，进行重连操作
                     if (ac.getAndIncrement() > 3) {
-                        client.reconnect();
+                        client.reconnect(ctx.channel());
                         ac.set(0);
                     }
                     log.warn("读空闲了，当前发生读空闲次数{}", ac.get());

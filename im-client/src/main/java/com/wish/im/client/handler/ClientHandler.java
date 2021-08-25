@@ -68,13 +68,13 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         super.exceptionCaught(ctx, cause);
-        client.reconnect();
+        client.reconnect(ctx.channel());
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        client.reconnect();
+        client.reconnect(ctx.channel());
     }
 
     private void sendAck(Message msg) {
