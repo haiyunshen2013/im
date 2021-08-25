@@ -89,6 +89,7 @@ public class ImClient implements Closeable {
     public void connect() {
         status = ClientStatus.CONNECTING;
         while (status != ClientStatus.CONNECTED) {
+            init();
             doConnect();
             if (!autoReconnect) {
                 return;
@@ -104,7 +105,6 @@ public class ImClient implements Closeable {
     private void doConnect() {
         try {
             channel = null;
-            init();
             ChannelFuture channelFuture = bootstrap.connect(host, port).sync();
             channel = channelFuture.channel();
             status = ClientStatus.CONNECTED;
@@ -162,6 +162,14 @@ public class ImClient implements Closeable {
             }
         });
         return responseFuture;
+    }
+
+    public ListenableFuture<Message> sendMsg(byte[] body, String toId) {
+        Message.Header header = new Message.Header();
+        header.setMsgType(MsgType.SEND);
+        header.setToId(toId);
+        Message message = new Message(header, body);
+        return sendMsg(message);
     }
 
     /**
@@ -239,14 +247,12 @@ public class ImClient implements Closeable {
         return callback;
     }
 
-    public ImClient setAutoHeart(boolean autoHeart) {
+    public void setAutoHeart(boolean autoHeart) {
         this.autoHeart = autoHeart;
-        return this;
     }
 
-    public ImClient setAutoReconnect(boolean autoReconnect) {
+    public void setAutoReconnect(boolean autoReconnect) {
         this.autoReconnect = autoReconnect;
-        return this;
     }
 
     public ImClient setCallback(Callback<Message> callback) {

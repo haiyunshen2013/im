@@ -20,9 +20,9 @@ public class ClientTest {
     public void f1() throws InterruptedException {
         ImClient client = createClient("1");
         client.setToken("123");
-        client.connect();
         client.setAutoHeart(true);
         client.setAutoReconnect(true);
+        client.connect();
         sendMsg("2", client, true);
         extracted();
         Thread.currentThread().join();
