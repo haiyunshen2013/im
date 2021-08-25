@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 描述
  *
  * @author shy
- * @date 2021/7/22
+ * @since 2021/7/22
  */
 @Slf4j
 public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
@@ -86,10 +86,8 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
         @Override
         public void run() {
             if (ctx.channel().isActive()) {
-                Message.Header header = new Message.Header();
-                header.setMsgType(MsgType.HEART);
-                Message heartMsg = new Message(header, null);
-                client.sendMsg(heartMsg);
+                Message heart = Message.builder().toId("server").type(MsgType.HEART).build();
+                client.sendMsg(heart);
             }
         }
     }

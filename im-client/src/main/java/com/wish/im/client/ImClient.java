@@ -108,10 +108,8 @@ public class ImClient implements Closeable {
             ChannelFuture channelFuture = bootstrap.connect(host, port).sync();
             channel = channelFuture.channel();
             status = ClientStatus.CONNECTED;
-            Message.Header header = new Message.Header();
-            header.setMsgType(MsgType.SHAKEHANDS);
             byte[] body = token != null ? token.getBytes(StandardCharsets.UTF_8) : null;
-            Message shakeHandsMsg = new Message(header, body);
+            Message shakeHandsMsg = Message.builder().type(MsgType.SHAKEHANDS).toId("server").body(body).build();
             sendMsg(shakeHandsMsg);
         } catch (Exception e) {
             e.printStackTrace();
@@ -141,7 +139,7 @@ public class ImClient implements Closeable {
     }
 
     public ListenableFuture<Message> sendMsg(Message message) {
-        message.getHeader().setFromId(clientId);
+        message.setFromId(clientId);
         SettableListenableFuture<Message> responseFuture = new SettableListenableFuture<>();
         ChannelFuture channelFuture = channel.writeAndFlush(message);
         RequestExecuteHandler requestExecuteHandler = channel.pipeline().get(RequestExecuteHandler.class);
@@ -151,7 +149,7 @@ public class ImClient implements Closeable {
                 if (!future.isSuccess()) {
                     responseFuture.setException(future.cause());
                     requestExecuteHandler.getListeners().remove(message.getId());
-                } else if (message.getHeader().getMsgType() == MsgType.ACK) {
+                } else if (message.getType() == MsgType.ACK) {
                     // ack消息没有回执，发送成功及完成
                     responseFuture.set(null);
                     requestExecuteHandler.getListeners().remove(message.getId());
@@ -162,10 +160,7 @@ public class ImClient implements Closeable {
     }
 
     public ListenableFuture<Message> sendMsg(byte[] body, String toId) {
-        Message.Header header = new Message.Header();
-        header.setMsgType(MsgType.SEND);
-        header.setToId(toId);
-        Message message = new Message(header, body);
+        Message message = Message.builder().toId(toId).body(body).type(MsgType.SEND).build();
         return sendMsg(message);
     }
 

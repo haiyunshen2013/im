@@ -1,7 +1,7 @@
-package com.wish.im.server.mvc.offlinemessage.data;
+package com.wish.im.server.mvc.message.data;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.wish.im.server.mvc.offlinemessage.entity.OfflineMessage;
+import com.wish.im.server.mvc.message.entity.MessageLog;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.stereotype.Repository;
 
@@ -13,5 +13,5 @@ import org.springframework.stereotype.Repository;
  */
 @Mapper
 @Repository
-public interface OfflineMessageMapper extends BaseMapper<OfflineMessage> {
+public interface MessageLogMapper extends BaseMapper<MessageLog> {
 }

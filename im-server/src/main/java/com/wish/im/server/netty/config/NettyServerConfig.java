@@ -6,9 +6,6 @@ import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wish.im.server.mvc.offlinemessage.service.OfflineMessageService;
-import com.wish.im.server.netty.message.DbOfflineMessageContainer;
-import com.wish.im.server.netty.message.IOfflineMessageContainer;
 import com.wish.ipusher.api.handler.AutoFillHandler;
 import com.wish.ipusher.api.utils.JsonUtils;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -27,11 +24,6 @@ import org.springframework.web.reactive.result.method.annotation.RequestMappingH
 @ComponentScan("com.wish.im.server")
 @EnableConfigurationProperties(AppConfig.class)
 public class NettyServerConfig {
-
-    @Bean
-    public IOfflineMessageContainer offlineMessageContainer(OfflineMessageService offlineMessageService) {
-        return new DbOfflineMessageContainer(offlineMessageService);
-    }
 
     @Bean
     public RequestMappingHandlerMapping requestMappingHandlerMapping() {

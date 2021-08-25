@@ -15,6 +15,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.server.PathContainer;
 import org.springframework.stereotype.Component;
@@ -61,14 +62,11 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
     protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
         RequestMessage requestMessage = convertReqMsg(msg);
         HandlerMethod handlerMethod = getMatchingHandlerMethod(requestMappingHandlerMapping.getHandlerMethods(), requestMessage);
-        Message.Header header = new Message.Header();
-        header.setFromId("server");
-        header.setMsgType(MsgType.RESPONSE);
-        header.setToId(msg.getHeader().getFromId());
+        Message message = Message.builder().fromId("server").type(MsgType.RESPONSE).toId(msg.getFromId()).build();
         byte[] body = null;
         if (handlerMethod != null) {
             HandlerMethod resolvedBean = handlerMethod.createWithResolvedBean();
-            header.setStatus(MsgStatus.OK.getValue());
+            message.setStatus(MsgStatus.OK.getValue());
             Object invoke;
             try {
                 IpusherContext ipusherContext = new IpusherContext();
@@ -81,15 +79,15 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
                 invoke = invokeMethHandler(msg, requestMessage, resolvedBean);
                 body = JsonUtils.serializeAsBytes(invoke);
             } catch (Exception e) {
-                header.setStatus(MsgStatus.INTERNAL_SERVER_ERROR.getValue());
+                message.setStatus(MsgStatus.INTERNAL_SERVER_ERROR.getValue());
             } finally {
                 IpusherContextHolder.release();
             }
         } else {
             // 没有找到合适的处理器
-            header.setStatus(MsgStatus.NOT_FOUND.getValue());
+            message.setStatus(MsgStatus.NOT_FOUND.getValue());
         }
-        Message message = new Message(header, body);
+        message.setBody(body);
         message.setOriginId(msg.getId());
         ctx.channel().writeAndFlush(message);
     }
@@ -132,9 +130,8 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
 
     private RequestMessage convertReqMsg(Message msg) {
         RequestMessage requestMessage = new RequestMessage();
-        requestMessage.setMessage(msg);
-        Message.Header header = msg.getHeader();
-        requestMessage.setUri(URI.create(header.getUrl()));
+        BeanUtils.copyProperties(msg, requestMessage);
+        requestMessage.setUri(URI.create(msg.getUrl()));
         requestMessage.setQueryParams(initQueryParams(requestMessage));
         return requestMessage;
     }
@@ -160,7 +157,7 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
 
     private RequestMethodsRequestCondition matchRequestMethod(RequestMappingInfo handlerMethod, RequestMessage message) {
         RequestMethodsRequestCondition methodsCondition = handlerMethod.getMethodsCondition();
-        String method = message.getHeader().getMethod();
+        String method = message.getMethod();
         if (methodsCondition.getMethods().isEmpty()) {
             return methodsCondition;
         }
@@ -185,7 +182,7 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
     }
 
     private PatternsRequestCondition matchPatternsRequest(RequestMappingInfo handlerMethod, RequestMessage message) {
-        String url = message.getHeader().getUrl();
+        String url = message.getUrl();
         int endIndex = url.indexOf('?');
         url = endIndex < 0 ? url : url.substring(0, endIndex);
         PathContainer pathContainer = PathContainer.parsePath(url);
