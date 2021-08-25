@@ -4,7 +4,7 @@ import com.wish.im.common.message.Message;
 import com.wish.im.common.message.MsgStatus;
 import com.wish.im.common.message.MsgType;
 import com.wish.im.server.netty.client.ClientInfo;
-import com.wish.im.server.netty.message.ReqMessage;
+import com.wish.im.server.netty.message.RequestMessage;
 import com.wish.ipusher.api.context.IpusherContext;
 import com.wish.ipusher.api.context.IpusherContextHolder;
 import com.wish.ipusher.api.utils.JsonUtils;
@@ -59,8 +59,8 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
-        ReqMessage reqMessage = convertReqMsg(msg);
-        HandlerMethod handlerMethod = getMatchingHandlerMethod(requestMappingHandlerMapping.getHandlerMethods(), reqMessage);
+        RequestMessage requestMessage = convertReqMsg(msg);
+        HandlerMethod handlerMethod = getMatchingHandlerMethod(requestMappingHandlerMapping.getHandlerMethods(), requestMessage);
         Message.Header header = new Message.Header();
         header.setFromId("server");
         header.setMsgType(MsgType.RESPONSE);
@@ -78,7 +78,7 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
                 ipusherContext.setServiceId(clientInfo.getId());
                 ipusherContext.setUid(clientInfo.getId());
                 IpusherContextHolder.setContext(ipusherContext);
-                invoke = invokeMethHandler(msg, reqMessage, resolvedBean);
+                invoke = invokeMethHandler(msg, requestMessage, resolvedBean);
                 body = JsonUtils.serializeAsBytes(invoke);
             } catch (Exception e) {
                 header.setStatus(MsgStatus.INTERNAL_SERVER_ERROR.getValue());
@@ -94,7 +94,7 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
         ctx.channel().writeAndFlush(message);
     }
 
-    private Object invokeMethHandler(Message msg, ReqMessage reqMessage, HandlerMethod resolvedBean) throws IllegalAccessException, InvocationTargetException {
+    private Object invokeMethHandler(Message msg, RequestMessage requestMessage, HandlerMethod resolvedBean) throws IllegalAccessException, InvocationTargetException {
         Object invoke;
         Method method = resolvedBean.getMethod();
         MethodParameter[] methodParameters = resolvedBean.getMethodParameters();
@@ -102,7 +102,7 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
             invoke = method.invoke(resolvedBean.getBean());
         } else {
             boolean isFirst = false;
-            MultiValueMap<String, String> ext = reqMessage.getQueryParams();
+            MultiValueMap<String, String> ext = requestMessage.getQueryParams();
             Object[] paramArr = new Object[methodParameters.length];
             for (int i = 0; i < methodParameters.length; i++) {
                 MethodParameter methodParameter = methodParameters[i];
@@ -130,16 +130,16 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
         return invoke;
     }
 
-    private ReqMessage convertReqMsg(Message msg) {
-        ReqMessage reqMessage = new ReqMessage();
-        reqMessage.setMessage(msg);
+    private RequestMessage convertReqMsg(Message msg) {
+        RequestMessage requestMessage = new RequestMessage();
+        requestMessage.setMessage(msg);
         Message.Header header = msg.getHeader();
-        reqMessage.setUri(URI.create(header.getUrl()));
-        reqMessage.setQueryParams(initQueryParams(reqMessage));
-        return reqMessage;
+        requestMessage.setUri(URI.create(header.getUrl()));
+        requestMessage.setQueryParams(initQueryParams(requestMessage));
+        return requestMessage;
     }
 
-    private HandlerMethod getMatchingHandlerMethod(Map<RequestMappingInfo, HandlerMethod> handlerMethods, ReqMessage message) {
+    private HandlerMethod getMatchingHandlerMethod(Map<RequestMappingInfo, HandlerMethod> handlerMethods, RequestMessage message) {
         for (RequestMappingInfo handlerMethod : handlerMethods.keySet()) {
             RequestMethodsRequestCondition methods = matchRequestMethod(handlerMethod, message);
             if (methods == null) {
@@ -158,7 +158,7 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
         return null;
     }
 
-    private RequestMethodsRequestCondition matchRequestMethod(RequestMappingInfo handlerMethod, ReqMessage message) {
+    private RequestMethodsRequestCondition matchRequestMethod(RequestMappingInfo handlerMethod, RequestMessage message) {
         RequestMethodsRequestCondition methodsCondition = handlerMethod.getMethodsCondition();
         String method = message.getHeader().getMethod();
         if (methodsCondition.getMethods().isEmpty()) {
@@ -170,7 +170,7 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
         return new RequestMethodsRequestCondition(RequestMethod.valueOf(method));
     }
 
-    private ParamsRequestCondition matchParamsRequest(RequestMappingInfo handlerMethod, ReqMessage message) {
+    private ParamsRequestCondition matchParamsRequest(RequestMappingInfo handlerMethod, RequestMessage message) {
         ParamsRequestCondition paramsCondition = handlerMethod.getParamsCondition();
         Set<NameValueExpression<String>> expressions = paramsCondition.getExpressions();
         if (expressions.isEmpty()) {
@@ -184,7 +184,7 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
         return null;
     }
 
-    private PatternsRequestCondition matchPatternsRequest(RequestMappingInfo handlerMethod, ReqMessage message) {
+    private PatternsRequestCondition matchPatternsRequest(RequestMappingInfo handlerMethod, RequestMessage message) {
         String url = message.getHeader().getUrl();
         int endIndex = url.indexOf('?');
         url = endIndex < 0 ? url : url.substring(0, endIndex);
@@ -204,9 +204,9 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
     }
 
 
-    protected MultiValueMap<String, String> initQueryParams(ReqMessage reqMessage) {
+    protected MultiValueMap<String, String> initQueryParams(RequestMessage requestMessage) {
         MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
-        String query = reqMessage.getUri().getRawQuery();
+        String query = requestMessage.getUri().getRawQuery();
         if (query != null) {
             Matcher matcher = QUERY_PATTERN.matcher(query);
             while (matcher.find()) {
