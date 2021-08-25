@@ -68,10 +68,8 @@ public class RequestExecuteHandler extends SimpleChannelInboundHandler<Message> 
 
     @Override
     public void exceptionCaught(ChannelHandlerContext context, Throwable cause) throws Exception {
-        listeners.forEach((k, v) -> {
-            v.getListenableFuture().setException(cause);
-            listeners.remove(k);
-        });
+        listeners.forEach((k, v) -> v.getListenableFuture().setException(cause));
+        listeners.clear();
     }
 
     public void addFuture(String originMsgId, ResponseMessage responseFuture) {
