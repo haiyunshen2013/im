@@ -1,5 +1,6 @@
 package com.wish.im.client.handler;
 
+import com.wish.im.client.concurrent.SettableListenableFuture;
 import com.wish.im.client.message.ResponseMessage;
 import com.wish.im.common.message.Message;
 import com.wish.im.common.message.MsgStatus;
@@ -50,18 +51,20 @@ public class RequestExecuteHandler extends SimpleChannelInboundHandler<Message> 
         }
         Message originMessage = responseMessage.getOriginMessage();
         Message.Header responseHeader = response.getHeader();
+        SettableListenableFuture<Message> listenableFuture = responseMessage.getListenableFuture();
         if (responseHeader.getMsgType() == MsgType.ACK) {
-            if (originMessage.getHeader().isEnableCache()) {
-                if (responseHeader.getStatus() == MsgStatus.SERVER_ACK.getValue()) {
-                    responseMessage.getListenableFuture().set(response);
-                    listeners.remove(originId);
-                }
-            } else if (responseHeader.getStatus() == MsgStatus.RECEIVER_ACK.getValue() || responseHeader.getStatus() == MsgStatus.FAIL.getValue()) {
-                responseMessage.getListenableFuture().set(response);
+            if (originMessage.getHeader().isEnableCache() && responseHeader.getStatus() == MsgStatus.SERVER_ACK.getValue()) {
+                listenableFuture.set(response);
+                listeners.remove(originId);
+            } else if (responseHeader.getStatus() == MsgStatus.FAIL.getValue()) {
+                listenableFuture.setException(new IllegalStateException("receiver is not online"));
+                listeners.remove(originId);
+            } else if (responseHeader.getStatus() == MsgStatus.RECEIVER_ACK.getValue()) {
+                listenableFuture.set(response);
                 listeners.remove(originId);
             }
         } else {
-            responseMessage.getListenableFuture().set(response);
+            listenableFuture.set(response);
             listeners.remove(originId);
         }
     }
