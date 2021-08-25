@@ -60,20 +60,19 @@ public class ClientTest {
                 try {
                     String str = sc.nextLine();
                     String[] s = str.split(" ");
-                    Message.Header header = new Message.Header();
-                    header.setToId(toId);
-                    header.setMethod(s[0]);
-                    header.setUrl(s[1]);
-                    header.setMsgType(Integer.parseInt(s[2]));
                     String bodyStr = null;
                     if (s.length > 3) {
                         String[] body = new String[s.length - 3];
                         System.arraycopy(s, 3, body, 0, body.length);
                         bodyStr = String.join(" ", body);
                     }
-                    Message message = new Message(header, bodyStr == null ? null : bodyStr.getBytes(StandardCharsets.UTF_8));
+                    Message message = Message.builder().toId(toId)
+                            .method(s[0])
+                            .url(s[1])
+                            .type(Integer.parseInt(s[2]))
+                            .body(bodyStr == null ? null : bodyStr.getBytes(StandardCharsets.UTF_8)).build();
                     if (enableCache) {
-                        header.setEnableCache(true);
+                        message.setEnableCache(true);
                     }
                     ListenableFuture<Message> listenableFuture = nettyClient.sendMsg(message);
                     TimeUnit.SECONDS.sleep(1);
@@ -88,5 +87,12 @@ public class ClientTest {
     @NotNull
     private static ImClient createClient(String id) {
         return new ImClient(id, "localhost", 8080);
+    }
+
+    @Test
+    public void f3() {
+        Message message = Message.builder().toId("toId").body("body".getBytes(StandardCharsets.UTF_8)).build();
+        message.setFromId("1");
+        System.err.println(message);
     }
 }

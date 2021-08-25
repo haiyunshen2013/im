@@ -2,6 +2,7 @@ package com.wish.im.server.netty.message;
 
 import com.wish.im.common.message.Message;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.util.MultiValueMap;
 
 import java.net.URI;
@@ -12,18 +13,11 @@ import java.net.URI;
  * @author shy
  * @since 2021/8/11
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class RequestMessage {
-    private Message message;
-
-    private Message.Header header;
+public class RequestMessage extends Message {
 
     private URI uri;
 
     private MultiValueMap<String, String> queryParams;
-
-    public void setMessage(Message message) {
-        this.message = message;
-        this.header = message.getHeader();
-    }
 }
