@@ -285,13 +285,13 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         channelFuture.addListener((ChannelFutureListener) future -> {
             MessageLog messageLog = messageLogService.getById(msg.getId());
             if (messageLog == null) {
-                messageLog = convertMessageLog(msg, ClientContainer.getById(msg.getFromId()).getChannel());
+                return;
+            }
+            if (future.isSuccess() && !messageLog.isSuccess()) {
                 messageLog.setToChannelId(to.getChannel().id().asLongText());
-            }
-            if (future.isSuccess()) {
                 messageLog.setSuccess(true);
+                messageLogService.updateById(messageLog);
             }
-            messageLogService.saveOrUpdate(messageLog);
         });
     }
 
