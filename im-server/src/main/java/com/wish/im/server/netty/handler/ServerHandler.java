@@ -10,6 +10,8 @@ import com.wish.im.server.mvc.message.entity.MessageLog;
 import com.wish.im.server.mvc.message.service.MessageLogService;
 import com.wish.im.server.netty.client.ClientContainer;
 import com.wish.im.server.netty.client.ClientInfo;
+import com.wish.ipusher.api.context.IpusherContext;
+import com.wish.ipusher.api.context.IpusherContextHolder;
 import io.netty.channel.*;
 import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.util.AttributeKey;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.wish.im.common.message.MsgType.*;
@@ -124,6 +127,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         if (clientInfo != null) {
             Account account = accountService.getById(clientInfo.getAccount().getId());
             clientInfo.setAccount(account);
+            IpusherContext ipusherContext = IpusherContextHolder.currentContext();
+            ipusherContext.setUid(account.getName());
+            ipusherContext.setAdmin(account.getType() == AccountType.ADMIN);
             return account.getExpireTime().isAfter(LocalDateTime.now());
         }
         return false;
@@ -156,6 +162,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
             messageLogService.save(messageLog);
             return false;
         }
+        IpusherContext ipusherContext = IpusherContextHolder.currentContext();
+        ipusherContext.setUid(account.getName());
+        ipusherContext.setAdmin(account.getType() == AccountType.ADMIN);
         ClientInfo clientInfo = new ClientInfo();
         clientInfo.setAccount(account);
         clientInfo.setId(fromId);
@@ -262,14 +271,17 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         // 发送离线消息
         List<MessageLog> list = messageLogService.lambdaQuery().eq(MessageLog::getToId, fromId)
                 .eq(MessageLog::isEnableCache, true).eq(MessageLog::isSuccess, false).list();
+        List<MessageLog> updates = new ArrayList<>();
         list.forEach(offlineMsg -> {
             ChannelFuture channelFuture = ctx.writeAndFlush(offlineMsg);
             channelFuture.addListener(future -> {
                 if (future.isSuccess()) {
                     offlineMsg.setSuccess(true);
-                    messageLogService.updateById(offlineMsg);
+                    offlineMsg.setToChannelId(ctx.channel().id().asLongText());
+                    updates.add(offlineMsg);
                 }
             });
+            messageLogService.updateBatchById(updates);
         });
     }
 
@@ -282,15 +294,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
     private void transferMsg(Message msg, ClientInfo to) {
         //转发给接受端
         ChannelFuture channelFuture = to.getChannel().writeAndFlush(msg);
-        channelFuture.addListener((ChannelFutureListener) future -> {
-            MessageLog messageLog = messageLogService.getById(msg.getId());
-            if (messageLog == null) {
-                return;
-            }
-            if (future.isSuccess() && !messageLog.isSuccess()) {
-                messageLog.setToChannelId(to.getChannel().id().asLongText());
-                messageLog.setSuccess(true);
-                messageLogService.updateById(messageLog);
+        channelFuture.addListener(future -> {
+            if (!future.isSuccess()) {
+                log.warn("transferMsg failed", future.cause());
             }
         });
     }

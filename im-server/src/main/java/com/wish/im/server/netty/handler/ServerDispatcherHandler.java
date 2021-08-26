@@ -5,7 +5,6 @@ import com.wish.im.common.message.MsgStatus;
 import com.wish.im.common.message.MsgType;
 import com.wish.im.server.netty.client.ClientInfo;
 import com.wish.im.server.netty.message.RequestMessage;
-import com.wish.ipusher.api.context.IpusherContext;
 import com.wish.ipusher.api.context.IpusherContextHolder;
 import com.wish.ipusher.api.utils.JsonUtils;
 import io.netty.channel.Channel;
@@ -69,13 +68,8 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
             message.setStatus(MsgStatus.OK.getValue());
             Object invoke;
             try {
-                IpusherContext ipusherContext = new IpusherContext();
-                ipusherContext.setAdmin(true);
                 Channel channel = ctx.channel();
                 ClientInfo clientInfo = ((ClientInfo) channel.attr(CLIENT_ATTR).get());
-                ipusherContext.setServiceId(clientInfo.getId());
-                ipusherContext.setUid(clientInfo.getId());
-                IpusherContextHolder.setContext(ipusherContext);
                 invoke = invokeMethHandler(msg, requestMessage, resolvedBean);
                 body = JsonUtils.serializeAsBytes(invoke);
             } catch (Exception e) {

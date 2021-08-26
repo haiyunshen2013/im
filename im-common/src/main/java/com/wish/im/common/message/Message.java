@@ -42,12 +42,7 @@ public class Message {
 
 //    private long timestamp = System.currentTimeMillis();
     /**
-     * 消息状态
-     * 0:尚未发送
-     * 1:服务端已接收
-     * 2:目标已接收
-     * 3:未登录
-     * 4:令牌过期
+     * @see MsgStatus
      */
     private int status;
 
