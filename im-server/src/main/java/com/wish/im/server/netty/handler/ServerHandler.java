@@ -47,57 +47,61 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
-        String fromId = msg.getFromId();
-        if (StringUtils.isBlank(fromId)) {
-            ctx.channel().disconnect();
-        }
-        if (msg.getType() == SHAKEHANDS) {
-            boolean loginSuccess = processLogin(ctx, msg);
-            if (loginSuccess) {
-                doShakeHands(ctx, msg);
-            } else {
-                Message noLongin = Message.builder().fromId("server")
-                        .toId(fromId).type(SEND).status(MsgStatus.NOT_LOGIN.getValue())
-                        .body("登录失败".getBytes(StandardCharsets.UTF_8)).build();
-                noLongin.setOriginId(msg.getId());
-                Channel channel = ctx.channel();
-                channel.writeAndFlush(noLongin);
-                channel.disconnect();
-                return;
+        try {
+            String fromId = msg.getFromId();
+            if (StringUtils.isBlank(fromId)) {
+                ctx.channel().disconnect();
             }
-        } else {
-            if (validLogin(msg)) {
-                if (msg.getType() == HEART) {
-                    doHeart(ctx, msg);
-                } else if (msg.getType() == SEND) {
-                    doSend(ctx, msg);
+            if (msg.getType() == SHAKEHANDS) {
+                boolean loginSuccess = processLogin(ctx, msg);
+                if (loginSuccess) {
+                    doShakeHands(ctx, msg);
+                } else {
+                    Message noLongin = Message.builder().fromId("server")
+                            .toId(fromId).type(SEND).status(MsgStatus.NOT_LOGIN.getValue())
+                            .body("登录失败".getBytes(StandardCharsets.UTF_8)).build();
+                    noLongin.setOriginId(msg.getId());
+                    Channel channel = ctx.channel();
+                    channel.writeAndFlush(noLongin);
+                    channel.disconnect();
                     return;
-                } else if (msg.getType() == ACK) {
-                    doAck(ctx, msg);
-                } else if (msg.getType() == REQUEST) {
-                    ClientInfo clientInfo = ((ClientInfo) ctx.channel().attr(CLIENT_ATTR).get());
-                    Account account = clientInfo.getAccount();
-                    if (account.getType() == AccountType.ADMIN) {
-                        ctx.fireChannelRead(msg);
-                    } else {
-                        // 权限不足
-                        Message noPermissionMsg = Message.builder().fromId("server")
-                                .toId(fromId).type(RESPONSE).status(MsgStatus.FORBIDDEN.getValue())
-                                .body("权限不足".getBytes(StandardCharsets.UTF_8)).build();
-                        noPermissionMsg.setOriginId(msg.getId());
-                        ctx.channel().writeAndFlush(noPermissionMsg);
-                        return;
-                    }
                 }
             } else {
-                processInvalidLogin(ctx, msg);
-                return;
+                if (validLogin(msg)) {
+                    if (msg.getType() == HEART) {
+                        doHeart(ctx, msg);
+                    } else if (msg.getType() == SEND) {
+                        doSend(ctx, msg);
+                        return;
+                    } else if (msg.getType() == ACK) {
+                        doAck(ctx, msg);
+                    } else if (msg.getType() == REQUEST) {
+                        ClientInfo clientInfo = ((ClientInfo) ctx.channel().attr(CLIENT_ATTR).get());
+                        Account account = clientInfo.getAccount();
+                        if (account.getType() == AccountType.ADMIN) {
+                            ctx.fireChannelRead(msg);
+                        } else {
+                            // 权限不足
+                            Message noPermissionMsg = Message.builder().fromId("server")
+                                    .toId(fromId).type(RESPONSE).status(MsgStatus.FORBIDDEN.getValue())
+                                    .body("权限不足".getBytes(StandardCharsets.UTF_8)).build();
+                            noPermissionMsg.setOriginId(msg.getId());
+                            ctx.channel().writeAndFlush(noPermissionMsg);
+                            return;
+                        }
+                    }
+                } else {
+                    processInvalidLogin(ctx, msg);
+                    return;
+                }
             }
-        }
-        // 刷新心跳时间
-        ClientInfo clientInfo = ClientContainer.getById(fromId);
-        if (clientInfo != null) {
-            clientInfo.setLastBeat(System.currentTimeMillis());
+            // 刷新心跳时间
+            ClientInfo clientInfo = ClientContainer.getById(fromId);
+            if (clientInfo != null) {
+                clientInfo.setLastBeat(System.currentTimeMillis());
+            }
+        } finally {
+            IpusherContextHolder.release();
         }
     }
 
