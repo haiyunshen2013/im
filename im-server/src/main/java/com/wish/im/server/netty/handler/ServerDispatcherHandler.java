@@ -5,7 +5,6 @@ import com.wish.im.common.message.MsgStatus;
 import com.wish.im.common.message.MsgType;
 import com.wish.im.server.netty.client.ClientInfo;
 import com.wish.im.server.netty.message.RequestMessage;
-import com.wish.ipusher.api.context.IpusherContextHolder;
 import com.wish.ipusher.api.utils.JsonUtils;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -74,8 +73,6 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
                 body = JsonUtils.serializeAsBytes(invoke);
             } catch (Exception e) {
                 message.setStatus(MsgStatus.INTERNAL_SERVER_ERROR.getValue());
-            } finally {
-                IpusherContextHolder.release();
             }
         } else {
             // 没有找到合适的处理器
