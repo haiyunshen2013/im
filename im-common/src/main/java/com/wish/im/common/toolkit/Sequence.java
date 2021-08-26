@@ -1,9 +1,10 @@
 package com.wish.im.common.toolkit;
 
+import io.netty.util.internal.PlatformDependent;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.concurrent.ThreadLocalRandom;
@@ -16,6 +17,21 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 @Slf4j
 public class Sequence {
+    private static Method getPidMethod = null;
+
+    static {
+        boolean android = PlatformDependent.isAndroid();
+        try {
+            if (android) {
+                getPidMethod = Class.forName("android.os.Process").getMethod("myPid");
+            } else {
+                Object runtimeMXBean = Class.forName("java.lang.management.ManagementFactory").getMethod("getRuntimeMXBean").invoke(null);
+                getPidMethod = runtimeMXBean.getClass().getMethod("getName");
+            }
+        } catch (Exception ignore) {
+        }
+    }
+
     /**
      * 时间起始标记点，作为基准，一般取系统的最近时间（一旦确定不能变动）
      */
@@ -76,12 +92,18 @@ public class Sequence {
     protected static long getMaxWorkerId(long datacenterId, long maxWorkerId) {
         StringBuilder mpid = new StringBuilder();
         mpid.append(datacenterId);
-        String name = ManagementFactory.getRuntimeMXBean().getName();
-        if (StringUtils.isNotBlank(name)) {
+        String pid = null;
+        if (getPidMethod != null) {
+            try {
+                pid = getPidMethod.invoke(null).toString();
+            } catch (Exception ignore) {
+            }
+        }
+        if (StringUtils.isNotBlank(pid)) {
             /*
              * GET jvmPid
              */
-            mpid.append(name.split("@")[0]);
+            mpid.append(pid);
         }
         /*
          * MAC + PID 的 hashcode 获取16个低位
@@ -169,5 +191,4 @@ public class Sequence {
     protected long timeGen() {
         return System.currentTimeMillis();
     }
-
 }
