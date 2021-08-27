@@ -16,6 +16,8 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.Closeable;
@@ -33,8 +35,10 @@ public class ImClient implements Closeable {
     /**
      * 客户端id，全局唯一
      */
+    @Getter
     private final String clientId;
 
+    @Setter
     private String token;
 
     private final String host;
@@ -57,14 +61,25 @@ public class ImClient implements Closeable {
      */
     private volatile boolean isReconnecting;
 
+    @Setter
+    @Getter
     private boolean autoHeart = true;
 
+    @Setter
+    @Getter
     private boolean autoReconnect;
 
+    @Setter
+    @Getter
     private Callback<Message> callback;
 
     public ImClient(String clientId, String host, int port) {
+        this(clientId, null, host, port);
+    }
+
+    public ImClient(String clientId, String token, String host, int port) {
         this.clientId = clientId;
+        this.token = token;
         this.host = host;
         this.port = port;
     }
@@ -177,10 +192,6 @@ public class ImClient implements Closeable {
         }
     }
 
-    public void setToken(String token) {
-        this.token = token;
-    }
-
     public void onMessageReceive(Message message) {
         if (callback != null) {
             try {
@@ -189,65 +200,5 @@ public class ImClient implements Closeable {
                 log.error("onMessageReceive error", e);
             }
         }
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public Bootstrap getBootstrap() {
-        return bootstrap;
-    }
-
-    public NioEventLoopGroup getEventExecutors() {
-        return eventExecutors;
-    }
-
-    public Channel getChannel() {
-        return channel;
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public boolean isReconnecting() {
-        return isReconnecting;
-    }
-
-    public boolean isAutoHeart() {
-        return autoHeart;
-    }
-
-    public boolean isAutoReconnect() {
-        return autoReconnect;
-    }
-
-    public Callback<Message> getCallback() {
-        return callback;
-    }
-
-    public void setAutoHeart(boolean autoHeart) {
-        this.autoHeart = autoHeart;
-    }
-
-    public void setAutoReconnect(boolean autoReconnect) {
-        this.autoReconnect = autoReconnect;
-    }
-
-    public void setCallback(Callback<Message> callback) {
-        this.callback = callback;
     }
 }
