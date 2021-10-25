@@ -72,6 +72,7 @@ public class ServerDispatcherHandler extends SimpleChannelInboundHandler<Message
                 invoke = invokeMethHandler(msg, requestMessage, resolvedBean);
                 body = JsonUtils.serializeAsBytes(invoke);
             } catch (Exception e) {
+                log.error("invokeMethHandler error", e);
                 message.setStatus(MsgStatus.INTERNAL_SERVER_ERROR.getValue());
             }
         } else {
