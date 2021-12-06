@@ -17,7 +17,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class ImServerApplication {
     public static void main(String[] args) {
         SpringApplication springApplication = new SpringApplication(ImServerApplication.class);
-        springApplication.setApplicationContextClass(AnnotationConfigApplicationContext.class);
+        springApplication.setApplicationContextFactory(webApplicationType -> new AnnotationConfigApplicationContext());
         ApplicationContext context = springApplication.run(args);
     }
 }

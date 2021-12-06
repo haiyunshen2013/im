@@ -1,8 +1,9 @@
 package com.wish.im.server.mvc.account.entity;
 
-import com.wish.ipusher.api.model.BaseEntity;
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import javax.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
@@ -13,10 +14,41 @@ import java.time.LocalDateTime;
  * @author shy
  * @since 2021/7/29
  */
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class Account extends BaseEntity<String> {
+public class Account {
 
+    /**
+     * id
+     */
+    private String id;
+
+    /**
+     * 创建时间
+     */
+    @TableField(fill = FieldFill.INSERT, updateStrategy = FieldStrategy.NEVER)
+    private LocalDateTime createTime;
+
+    /**
+     * 创建人
+     */
+    @TableField(fill = FieldFill.INSERT, updateStrategy = FieldStrategy.NEVER)
+    private String creator;
+
+    /**
+     * 更新时间
+     */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updateTime;
+
+    /**
+     * 更新人
+     */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private String updatedBy;
+    /**
+     * remark
+     */
+    private String remark;
     /**
      * 身份
      */

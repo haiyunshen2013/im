@@ -6,8 +6,8 @@ import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wish.ipusher.api.handler.AutoFillHandler;
-import com.wish.ipusher.api.utils.JsonUtils;
+import com.wish.im.common.util.JsonUtils;
+import com.wish.im.server.handler.AutoFillHandler;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -25,7 +25,7 @@ import org.springframework.web.reactive.result.method.annotation.RequestMappingH
 @EnableConfigurationProperties(AppConfig.class)
 public class NettyServerConfig {
 
-    @Bean
+//    @Bean
     public RequestMappingHandlerMapping requestMappingHandlerMapping() {
         return new RequestMappingHandlerMapping();
     }
