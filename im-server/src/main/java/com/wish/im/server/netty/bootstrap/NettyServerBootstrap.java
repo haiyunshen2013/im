@@ -12,6 +12,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -25,6 +26,7 @@ import javax.annotation.PostConstruct;
  */
 @Component
 @AllArgsConstructor
+@Slf4j
 public class NettyServerBootstrap {
 
     private final AppConfig appConfig;
@@ -61,7 +63,7 @@ public class NettyServerBootstrap {
 
                 //绑定端口
                 ChannelFuture future = bootstrap.bind(appConfig.getPort()).sync();
-                System.out.println("server start ...... ");
+                log.info("server start ...... ");
 
                 //等待服务端监听端口关闭
                 future.channel().closeFuture().sync();
