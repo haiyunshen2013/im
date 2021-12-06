@@ -1,7 +1,7 @@
 package com.wish.im.common.codec;
 
 import com.wish.im.common.message.Message;
-import com.wish.ipusher.api.utils.JsonUtils;
+import com.wish.im.common.util.JsonUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandler;

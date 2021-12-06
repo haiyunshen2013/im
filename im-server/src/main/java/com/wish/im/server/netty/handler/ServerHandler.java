@@ -1,6 +1,8 @@
 package com.wish.im.server.netty.handler;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.wish.im.common.context.ImContext;
+import com.wish.im.common.context.ImContextHolder;
 import com.wish.im.common.message.Message;
 import com.wish.im.common.message.MsgStatus;
 import com.wish.im.server.constant.AccountType;
@@ -10,8 +12,6 @@ import com.wish.im.server.mvc.message.entity.MessageLog;
 import com.wish.im.server.mvc.message.service.MessageLogService;
 import com.wish.im.server.netty.client.ClientContainer;
 import com.wish.im.server.netty.client.ClientInfo;
-import com.wish.ipusher.api.context.IpusherContext;
-import com.wish.ipusher.api.context.IpusherContextHolder;
 import io.netty.channel.*;
 import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.util.AttributeKey;
@@ -101,7 +101,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                 clientInfo.setLastBeat(System.currentTimeMillis());
             }
         } finally {
-            IpusherContextHolder.release();
+            ImContextHolder.release();
         }
     }
 
@@ -131,7 +131,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         if (clientInfo != null) {
             Account account = accountService.getById(clientInfo.getAccount().getId());
             clientInfo.setAccount(account);
-            IpusherContext ipusherContext = IpusherContextHolder.currentContext();
+            ImContext ipusherContext = ImContextHolder.currentContext();
             ipusherContext.setUid(account.getName());
             ipusherContext.setAdmin(account.getType() == AccountType.ADMIN);
             return account.getExpireTime().isAfter(LocalDateTime.now());
@@ -166,7 +166,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
             messageLogService.save(messageLog);
             return false;
         }
-        IpusherContext ipusherContext = IpusherContextHolder.currentContext();
+        ImContext ipusherContext = ImContextHolder.currentContext();
         ipusherContext.setUid(account.getName());
         ipusherContext.setAdmin(account.getType() == AccountType.ADMIN);
         ClientInfo clientInfo = new ClientInfo();
