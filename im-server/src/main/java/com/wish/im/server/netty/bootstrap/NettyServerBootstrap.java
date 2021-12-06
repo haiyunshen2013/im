@@ -38,7 +38,7 @@ public class NettyServerBootstrap {
     public void start() {
         Thread daemon = new Thread(() -> {
             //boss线程监听端口，worker线程负责数据读写
-            EventLoopGroup boss = new NioEventLoopGroup();
+            EventLoopGroup boss = new NioEventLoopGroup(1);
             EventLoopGroup worker = new NioEventLoopGroup();
 
             try {
