@@ -9,9 +9,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 
@@ -27,25 +26,14 @@ public class RequestExecuteHandler extends SimpleChannelInboundHandler<Message> 
 
     private long expireTime = 30 * 60 * 1000L;
 
-    private long expireRate = 10 * 1000L;
-
-    private final Timer timer = new Timer();
-
-    private final TimerTask task = new TimerTask() {
-        @Override
-        public void run() {
-            expireFuture();
-        }
-    };
-
     public void init() {
-        timer.schedule(task, expireRate);
+        //do nothing
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext context, Message response) throws Exception {
         String originId = response.getOriginId();
-        ResponseMessage responseMessage = listeners.get(originId);
+        ResponseMessage responseMessage = listeners.remove(originId);
         if (responseMessage == null) {
             return;
         }
@@ -54,29 +42,29 @@ public class RequestExecuteHandler extends SimpleChannelInboundHandler<Message> 
         if (response.getType() == MsgType.ACK) {
             if (originMessage.isEnableCache() && response.getStatus() == MsgStatus.SERVER_ACK.getValue()) {
                 listenableFuture.set(response);
-                listeners.remove(originId);
             } else if (response.getStatus() == MsgStatus.FAIL.getValue()) {
                 listenableFuture.setException(new IllegalStateException("receiver is not online"));
-                listeners.remove(originId);
             } else if (response.getStatus() == MsgStatus.RECEIVER_ACK.getValue()) {
                 listenableFuture.set(response);
-                listeners.remove(originId);
             }
         } else {
             listenableFuture.set(response);
-            listeners.remove(originId);
         }
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext context, Throwable cause) throws Exception {
-        listeners.forEach((k, v) -> v.getListenableFuture().setException(cause));
+    public void channelInactive(ChannelHandlerContext context) {
+        listeners.forEach((k, v) -> v.getListenableFuture().setException(new IOException("连接已断开")));
         listeners.clear();
     }
 
+
     public void addFuture(String originMsgId, ResponseMessage responseFuture) {
         listeners.put(originMsgId, responseFuture);
+        // 发送消息时惰性删除过期数据，防止OOM
+        expireFuture();
     }
+
 
     public void expireFuture() {
         listeners.entrySet().removeIf(next -> {
@@ -96,9 +84,5 @@ public class RequestExecuteHandler extends SimpleChannelInboundHandler<Message> 
 
     public void setExpireTime(long expireTime) {
         this.expireTime = expireTime;
-    }
-
-    public void setExpireRate(long expireRate) {
-        this.expireRate = expireRate;
     }
 }

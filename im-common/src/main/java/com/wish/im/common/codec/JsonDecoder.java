@@ -8,6 +8,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -21,18 +22,14 @@ public class JsonDecoder extends MessageToMessageDecoder<ByteBuf> {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        ByteBuf byteBuf = in.slice(0, 8);
+        in.readerIndex(8);
+        byte[] magicBytes = ByteBufUtil.getBytes(byteBuf, byteBuf.readerIndex(), byteBuf.readableBytes(), false);
+        String magic = new String(magicBytes, StandardCharsets.UTF_8); // magic num
+        byte version = in.readByte(); // codec version
         final byte[] array;
-        final int offset;
         final int length = in.readableBytes();
-        if (in.hasArray()) {
-            array = in.array();
-            offset = in.arrayOffset() + in.readerIndex();
-        } else {
-            array = ByteBufUtil.getBytes(in, in.readerIndex(), length, false);
-            offset = 0;
-        }
-        byte[] dest = new byte[length];
-        System.arraycopy(array, offset, dest, 0, length);
-        out.add(JsonUtils.deserialize(dest, Message.class));
+        array = ByteBufUtil.getBytes(in, in.readerIndex(), length, false);
+        out.add(JsonUtils.deserialize(array, Message.class));
     }
 }
