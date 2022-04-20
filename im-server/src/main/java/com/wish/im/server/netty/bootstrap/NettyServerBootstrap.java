@@ -1,7 +1,6 @@
 package com.wish.im.server.netty.bootstrap;
 
 import com.wish.im.server.netty.config.AppConfig;
-import com.wish.im.server.netty.handler.BoosHandler;
 import com.wish.im.server.netty.handler.ServerChannelInitializer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -48,10 +47,10 @@ public class NettyServerBootstrap {
                 bootstrap.group(boss, worker);
 
                 //设置socket工厂
-                bootstrap.channel(NioServerSocketChannel.class).handler(new BoosHandler());
+                bootstrap.channel(NioServerSocketChannel.class);
 
                 //设置管道工厂
-                bootstrap.childHandler(serverChannelInitializer).handler(new LoggingHandler(LogLevel.INFO));
+                bootstrap.childHandler(serverChannelInitializer).childHandler(new LoggingHandler(LogLevel.INFO));
 
                 //设置TCP参数
                 //1.链接缓冲池的大小（ServerSocketChannel的设置）

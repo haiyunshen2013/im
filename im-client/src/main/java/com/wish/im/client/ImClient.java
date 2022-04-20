@@ -88,6 +88,9 @@ public class ImClient implements Closeable {
      * 初始化连接参数
      */
     private void init() {
+        if (status > 0) {
+            return;
+        }
         eventExecutors = new NioEventLoopGroup(1);
         bootstrap = new Bootstrap();
         bootstrap.group(eventExecutors).channel(NioSocketChannel.class)
@@ -102,9 +105,9 @@ public class ImClient implements Closeable {
      * 建立连接,如果连接失败，则进入重连阶段
      */
     public void connect() {
+        init();
         status = ClientStatus.CONNECTING;
         while (status != ClientStatus.CONNECTED) {
-            init();
             doConnect();
             if (!autoReconnect) {
                 return;
@@ -145,6 +148,7 @@ public class ImClient implements Closeable {
         if (!isReconnecting) {
             synchronized (this) {
                 if (!isReconnecting) {
+                    channel.disconnect();
                     isReconnecting = true;
                     connect();
                     isReconnecting = false;
@@ -153,12 +157,18 @@ public class ImClient implements Closeable {
         }
     }
 
+    public void disconnect() {
+        if (channel.isActive()) {
+            channel.disconnect();
+        }
+    }
+
     public ListenableFuture<Message> sendMsg(Message message) {
         message.setFromId(clientId);
         SettableListenableFuture<Message> responseFuture = new SettableListenableFuture<>();
-        ChannelFuture channelFuture = channel.writeAndFlush(message);
         RequestExecuteHandler requestExecuteHandler = channel.pipeline().get(RequestExecuteHandler.class);
         requestExecuteHandler.addFuture(message.getId(), new ResponseMessage(message, responseFuture));
+        ChannelFuture channelFuture = channel.writeAndFlush(message);
         channelFuture.addListener((ChannelFutureListener) future -> {
             if (!responseFuture.isDone()) {
                 if (!future.isSuccess()) {

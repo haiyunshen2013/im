@@ -5,8 +5,8 @@ import com.wish.im.common.message.Message;
 import com.wish.im.common.message.MsgType;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +33,7 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
         this.client = client;
     }
 
-    private static final EventLoopGroup EXECUTORS = new NioEventLoopGroup(1);
+    private static final EventLoopGroup EXECUTORS = new DefaultEventLoopGroup(1);
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -52,6 +52,7 @@ public class HeartbeatHandler extends ChannelInboundHandlerAdapter {
                 case READER_IDLE:
                     // 规定时间内没收到服务端心跳包响应，进行重连操作
                     if (ac.getAndIncrement() > 3) {
+                        client.disconnect();
                         client.reconnect(ctx.channel());
                         ac.set(0);
                     }
