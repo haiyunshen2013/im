@@ -175,4 +175,4 @@ public class Message {
 # TODO
 
 1. 增加grpc支持
-
+2. 增加负载均衡与高可用性支持
